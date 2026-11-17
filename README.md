@@ -3,7 +3,7 @@
 > **Frontend Technical Exercise Submission**  
 > **Domain:** Enterprise Logistics & Supply Chain Revenue Operations  
 > **Primary Persona:** Finance Operations Lead / Logistics Billing Specialist  
-> **Application URL:** `http://localhost:5173`
+> **Application URL:** `https://bill-cycle.vercel.app/`
 
 ---
 
@@ -100,7 +100,6 @@ Instead of maintaining clunky spreadsheets, **BillCycle automates and governs th
 | **1-to-1 Billing Preference Constraint** | Enforced in `mockApi.createBillingPreference` and UI selection. | Prevents duplicate active billing preferences for the same company, eliminating ambiguous cycle boundaries and double-billing. |
 | **Canonical State Machine** | Strict 3-state cycle lifecycle: `OPEN` → `CLOSED` → `INVOICED`. | Replaced ambiguous intermediate sub-states (`IN_REVIEW`, `READY_FOR_REVIEW`) with clear, unmistakable statuses. |
 | **Single-Row Column Density** | Combined Customer Name with secondary codes (Cycle / Invoice #) using `whitespace-nowrap`. | Prevents awkward multi-line text wrapping on wide desktop monitors and keeps vertical table rhythm compact and scannable. |
-| **Currency & Number Uniformity** | `IndianRupee` (`₹`) everywhere via `formatINR`. | Replaced western `$` icon defaults with proper Indian Rupee (`₹`) typography, lakhs/crores formatting, and consistent currency icons across inputs and buttons. |
 | **Pure Functional Math Engines** | `taxCalculations.js` and `cycleCalculations.js` separated from React rendering. | Guarantees testability, determinism, and zero floating-point accumulation errors (`round2` decimal precision). |
 
 ---
@@ -119,15 +118,18 @@ Instead of maintaining clunky spreadsheets, **BillCycle automates and governs th
 
 ## 6. Assumptions & Tradeoffs
 
-1. **Frontend-Only Architecture (No Backend):**
+1. **Company Location & Currency (India-Based Operation):**
+   - *Assumption:* We assume the logistics company is based in India. Consequently, the currency is standardized to Indian Rupees (INR ₹), numbers follow the Indian numbering system (Lakhs/Crores), and the tax engine models Indian Goods & Services Tax (GST: CGST/SGST for intra-state supply, IGST for inter-state freight under SAC 9965).
+   - *Tradeoff:* International multi-currency conversion (USD/EUR) and global VAT engines are out of scope for this scope, though the calculation architecture can easily accommodate multiple currency strategies.
+2. **Frontend-Only Architecture (No Backend):**
    - *Tradeoff:* No real database or remote server.
    - *Design Choice:* Architected a dedicated asynchronous `MockApi` service layer with simulated network latency and `localStorage` persistence. The entire frontend interacts with Promises, making it a zero-refactor drop-in replacement for a real REST or GraphQL API.
-2. **Deterministic GST Tax Rules:**
+3. **Deterministic GST Tax Rules:**
    - *Assumption:* Seller entity is based in Karnataka (`29AABCL9988K1Z5`). Buyers in Karnataka incur CGST + SGST (9% + 9%); buyers in other Indian states incur IGST (18%); international entities incur local standard tax (Singapore GST 9%).
-3. **Browser Print vs. Server PDF Generation:**
+4. **Browser Print vs. Server PDF Generation:**
    - *Tradeoff:* Used CSS `@media print` styling on `InvoiceDocument.jsx` rather than bundling heavy canvas/PDF libraries.
    - *Benefit:* Instantaneous rendering, pixel-perfect native browser PDF export, and zero client bundle bloat.
-4. **Number Precision:**
+5. **Number Precision:**
    - *Assumption:* Handled with standard two-decimal rounding utilities (`round2`). For high-frequency Wall Street fractional cent calculations, a library like `decimal.js` would be preferred.
 
 ---
