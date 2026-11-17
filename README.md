@@ -1,219 +1,202 @@
-# BillCycle — Billing Cycle Management SaaS
+# BillCycle — B2B Logistics Billing & Revenue Operations
 
-> **Tagline:** Billing and Revenue Operations for B2B Logistics  
-> **Target Persona:** Finance Operations Manager & Billing Operations Leads  
-
----
-
-## 1. Product Problem & Vision
-
-In enterprise logistics operations, freight movements, warehouse handling, and cold-chain dispatches occur continuously throughout the calendar month. Finance operations teams face significant challenges in:
-- **Consolidating deliveries into customer contract periods:** Shipments must be gathered into specific recurring cycle windows (Weekly, Monthly, Quarterly) anchored to customer timezones (e.g., IST `Asia/Kolkata` and SGT `Asia/Singapore`).
-- **Audit and reconciliation before invoice locking:** Operations managers must inspect line-item eligibility, exclude disputed or unverified consignments, and attach contractual adjustments (such as diesel index fuel rebates, demurrage waivers, or priority transit charges).
-- **Deterministic tax computation:** Computing applicable taxes across domestic intra-state supply (CGST 9% + SGST 9% in Karnataka), domestic inter-state supply (IGST 18%), and international cross-border hubs (Singapore GST 9%).
-- **Immutable invoice lifecycle:** Ensuring closed cycles lock deliveries against modification, generating unique sequential tax invoices without duplication, recording partial remittances, and tracking outstanding receivables.
-
-**BillCycle** provides a standalone, auditable, high-performance web application purpose-built for finance teams to manage the complete lifecycle from shipment consolidation to cycle closure, invoice generation, and payment realization.
+> **Frontend Technical Exercise Submission**  
+> **Domain:** Enterprise Logistics & Supply Chain Revenue Operations  
+> **Primary Persona:** Finance Operations Lead / Logistics Billing Specialist  
+> **Application URL:** `http://localhost:5173`
 
 ---
 
-## 2. Core Features
+## 1. Problem Statement
 
-### A. Overview Dashboard
-- **Executive Financial KPIs:** Real-time visibility into Total Billable Revenue, Unbilled Volume, Outstanding Receivables, Generated Invoices count, and Billing Cycle Completion percentage.
-- **Revenue vs. Collections Chart:** Trajectory bar chart comparing monthly billed volume against collected cash remittances.
-- **Action Items & Attention Queue:** Proactive surfacing of cycles ready for sign-off review, closed cycles pending invoice generation, and past-due accounts.
-- **Audit Activity Log:** Chronological activity feed logging cycle closures, invoice generations, adjustment additions, and payments.
+In enterprise logistics and freight brokerage, transport operations happen continuously across regional hubs, fulfillment centers, and international transit corridors. However, converting raw operational waybills into approved, collectible revenue is often fragmented, error-prone, and manual:
 
-### B. Billing Cycles Workspace
-- **Multi-parameter Filtering:** Search by customer name, client code, or cycle ID; filter by status (`Draft`, `In Review`, `Ready for Review`, `Closed`, `Invoiced`) and frequency (`Weekly`, `Monthly`, `Quarterly`).
-- **Data Table & Responsive Card Views:** Full tabular grid with sortable amounts, date ranges, and item counters, with automated adaptive card views for tablet and mobile viewports.
-- **Timezone Indicators:** Shows customer-local dates with explicit timezone offsets (`IST UTC+05:30`, `SGT UTC+08:00`).
+1. **Fragmented Consolidation:** Shipments and waybills must be grouped into contract-specific recurring windows (Weekly, Monthly, Quarterly) anchored to customer timezones (e.g. `Asia/Kolkata` IST, `Asia/Singapore` SGT).
+2. **Ambiguous Lifecycle & Double-Billing Risk:** Without strict billing preferences and state machine rules, companies risk duplicate active cycles or generating conflicting invoices.
+3. **Pre-Invoice Audit & Discrepancy Resolution:** Operations teams need to inspect individual deliveries, toggle inclusion/exclusion for contested consignments, and attach contractual adjustments (such as demurrage waivers, reefer sensor staging fees, or fuel rebates) with auditable justification before locking.
+4. **Deterministic Multi-State Tax Calculations:** Freight billing in India requires deterministic Goods & Services Tax (GST) computation based on the place of supply:
+   - Domestic Intra-State (Karnataka buyer): Split into Central GST (CGST 9%) + State GST (SGST 9%) = 18%.
+   - Domestic Inter-State (Maharashtra, Tamil Nadu, Delhi buyers): Integrated GST (IGST 18%).
+   - Cross-Border Supply (Singapore hub): Singapore GST (9%).
+5. **Irreversible Accounting Transitions:** Once a cycle is closed, line items must become immutable to prevent post-closure tampering, generating a sequential tax invoice with receivables tracking and partial remittance support.
 
-### C. Billing Cycle Detail (Primary Workflow)
-- **Customer & Contract Strip:** Customer GSTIN/UEN, billing address, jurisdiction, payment terms, and credit limits.
-- **Billable Shipments Table:** Itemized freight orders displaying waybill reference, service type, vehicle specifications, origin/destination route, delivery timestamp, base amount, and fuel surcharges.
-- **Item Inclusion/Exclusion Control:** Live toggle allowing finance operators to exclude deliveries prior to cycle locking.
-- **Adjustments & Discrepancies Panel:** Add operational adjustments with credit rebates (deductions) or ancillary surcharges (additions), including SLA clause documentation.
-- **Financial Breakdown & Tax Engine:** Dynamic computation of shipments subtotal, net adjustments, taxable base, deterministic GST/tax lines, and grand total in INR (₹).
-- **Audit-Safe Cycle Closure Modal:** Confirmation dialog warning operators of immutability before locking shipment items.
-- **One-Click Invoice Issuance:** Generates the legal tax invoice upon closure and links to the invoice document.
-
-### D. Invoice Preview & Collections
-- **Print-Ready Tax Invoice:** Formatted B2B tax invoice with seller credentials (PAN, GSTIN, Bank details, SWIFT), customer details, place of supply, SAC 9965 classification, and tax breakdown.
-- **Browser Print Formatting:** Tailored `@media print` layout removing navigation elements and margins for clean PDF printing.
-- **Payment Remittance Modal:** Record partial and full customer remittances (RTGS, NEFT, Telegraphic Wire, Corporate Card) with bank reference tracking.
-- **Dynamic Payment Status:** Automatically transitions between `ISSUED` (unpaid), `PARTIALLY_PAID`, `PAID`, and `OVERDUE` based on remaining balance and due dates.
-- **JSON Export:** Download full structured invoice object for ERP/audit ingestion.
-
-### E. Customer Management
-- List and modal inspector for enterprise accounts, detailing billing configurations, timezones, tax IDs, credit limits, and contact points.
+**BillCycle** is a purpose-built React application solving this complete operational workflow: from shipment consolidation and billing preference enforcement to audit sign-off, deterministic tax invoice generation, and cash collection tracking.
 
 ---
 
-## 3. Business Logic & Tax Assumptions
+## 2. Intended User & Operational Workflow
 
-1. **Seller Profile:**
-   - Legal Entity: *BillCycle Logistics Private Limited*
-   - Registered State: **Karnataka (KA)** (GSTIN: `29AABCL9988K1Z5`)
-2. **Tax Jurisdictions:**
-   - **India Intra-State (Karnataka buyer):** Split into Central GST (CGST 9%) and State GST (SGST 9%) = 18% total.
-   - **India Inter-State (Non-Karnataka buyer, e.g. Maharashtra, Tamil Nadu, Delhi):** Integrated GST (IGST 18%).
-   - **Singapore Cross-Border Supply:** Singapore Goods and Services Tax (GST 9%).
-3. **Item Eligibility & Cycle Immutability:**
-   - Only shipments with status `ELIGIBLE` and `isIncluded === true` contribute to taxable base.
-   - Closing a cycle locks its billable shipments and exclusions permanently.
-   - Once a cycle is invoiced, it holds an immutable reference to the invoice ID and prevents duplicate issuance.
-4. **Timezone Date Boundaries:**
-   - Cycle start and end dates are evaluated within the customer's local timezone. Weekly cycles anchor to Monday 00:00; monthly cycles anchor to the 1st of the calendar month; quarterly cycles anchor to Q1 (Jan 1), Q2 (Apr 1), Q3 (Jul 1), and Q4 (Oct 1).
+### Primary Persona: Finance Operations Lead (Revenue Operations)
+- **Role:** Responsible for reconciling month-end logistics freight bills, securing operational approvals, enforcing credit terms, and accelerating days sales outstanding (DSO).
+- **Core Mental Model:** High-information-density workflows, zero tolerance for visual fluff, immediate visibility into unbilled revenue and overdue receivables, and auditable proof for every adjustment.
+
+### Typical User Journey in BillCycle:
+1. **Executive Assessment (Overview):** Evaluates Total Billable Revenue (₹34.69 L), Unbilled Volume (₹10.09 L), Outstanding Receivables (₹14.35 L), and acts on the prioritized **Attention Required** queue.
+2. **Configuration & Governance (Billing Preferences):** Verifies customer billing cadences (Weekly/Monthly/Quarterly) and ensures each client has exactly one active configuration to eliminate double-billing.
+3. **Consolidation Audit (Billing Cycles):** Opens an `OPEN` cycle, reviews freight deliveries, excludes unverified or damaged shipments, and attaches operational adjustments with SLA references.
+4. **Audit Sign-off (Cycle Closure):** Executes an immutable close action with warning verification, locking line items against further edits.
+5. **Invoice Issuance (Tax Invoice):** Generates a compliant tax invoice with sequential numbering (`BC-INV-2026-XXXX`), statutory SAC code (9965), and GST breakdown.
+6. **Receivables & Cash Collection (Invoices):** Records customer remittances (RTGS, NEFT, Wire) against issued or overdue invoices, dynamically updating remaining balances.
 
 ---
 
-## 4. Architecture & Directory Structure
-
-Organized strictly by feature modules with decoupled service and utility layers:
+## 3. Architecture & Data Flow
 
 ```
-src/
-├── app/
-│   ├── AppLayout.jsx           # Application shell (Header, Sidebar, Mobile Drawer)
-│   └── router.jsx              # Client-side React Router configuration
-├── components/
-│   ├── layout/
-│   │   ├── Header.jsx          # Header with simulation controls & demo data reset
-│   │   ├── Sidebar.jsx         # Collapsible desktop sidebar navigation
-│   │   └── MobileNav.jsx       # Mobile slide-out navigation drawer
-│   ├── shared/
-│   │   ├── ConfirmDialog.jsx   # Accessible confirmation modal
-│   │   ├── EmptyState.jsx      # Empty state with actionable button
-│   │   ├── ErrorState.jsx      # Retryable error state with diagnostic message
-│   │   ├── MetricCard.jsx      # KPI card with loading skeleton
-│   │   └── StatusBadge.jsx     # Semantic status badges with icons
-│   └── ui/
-│       ├── Badge.jsx, Button.jsx, Card.jsx, Input.jsx, Modal.jsx, Select.jsx, Skeleton.jsx
-├── data/
-│   └── initialData.js          # Pre-seeded customer, cycle, shipment, invoice mock data
-├── features/
-│   ├── billing-cycles/
-│   │   ├── CycleDetailPage.jsx # Primary workflow: item review, adjustments, closure
-│   │   ├── CyclesPage.jsx      # Data table workspace with search & filters
-│   │   ├── components/         # Table, FilterBar, ShipmentItemsTable, AdjustmentModal, etc.
-│   │   └── utils/
-│   │       └── cycleCalculations.js # Pure calculation engine & closure validators
-│   ├── customers/
-│   │   ├── CustomersPage.jsx   # Client accounts directory
-│   │   └── components/CustomerModal.jsx
-│   ├── invoices/
-│   │   ├── InvoiceDetailPage.jsx # Invoice preview, print action, payment modal
-│   │   ├── InvoicesPage.jsx      # Invoices list with status filtering
-│   │   └── components/         # InvoiceDocument, RecordPaymentModal, InvoiceTable
-│   └── overview/
-│       ├── OverviewPage.jsx    # Executive dashboard
-│       └── components/         # RevenueChart, AttentionList, RecentActivityFeed
-├── services/
-│   ├── mockApi.js              # Simulated asynchronous API layer with latency & error simulation
-│   └── storage.js              # LocalStorage persistence & factory reset mechanism
-├── utils/
-│   ├── cn.js                   # Class merging (clsx + tailwind-merge)
-│   ├── currencyUtils.js        # Currency formatting in INR (₹) and compact denominations
-│   ├── dateUtils.js            # Date formatting, due dates, and cycle boundaries
-│   └── taxCalculations.js      # Deterministic GST tax engine
-└── test/
-    ├── billingWorkflow.test.jsx # Complete end-to-end workflow test
-    ├── CycleDetailPage.test.jsx # UI component interaction test
-    ├── cycleCalculations.test.js # Financial calculation unit tests
-    ├── dateUtils.test.js        # Date boundary & due date calculation tests
-    ├── setup.js                 # Testing setup with @testing-library/jest-dom
-    └── taxCalculations.test.js  # Tax calculation tests
+                      ┌───────────────────────────────┐
+                      │    React 19 / Vite Frontend   │
+                      └──────────────┬────────────────┘
+                                     │
+           ┌─────────────────────────┴─────────────────────────┐
+           ▼                                                   ▼
+┌──────────────────────┐                           ┌───────────────────────┐
+│ Presentation Layer   │                           │ Pure Domain Utilities │
+│ ├── AppLayout        │                           │ ├── taxCalculations   │
+│ ├── DataTable        │                           │ ├── cycleCalculations │
+│ ├── Feature Modules  │                           │ ├── dateUtils         │
+│ └── Modals & Drawers │                           │ └── currencyUtils     │
+└──────────┬───────────┘                           └───────────▲───────────┘
+           │                                                   │
+           │ (asynchronous actions & queries)                  │ (pure math)
+           ▼                                                   │
+┌──────────────────────────────────────────────────────────────┴───────────┐
+│ Mock Service Layer (`mockApi.js`)                                        │
+│ - Realistic simulated network latency (150–350ms)                        │
+│ - Deterministic error simulation switch                                  │
+│ - Business validation (1-to-1 billing preferences, cycle closure rules)  │
+└──────────────────────────────────────┬───────────────────────────────────┘
+                                       │
+                                       ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│ Storage & Persistence Engine (`storage.js`)                              │
+│ - LocalStorage versioned keys (`billcycle_*_v1`)                         │
+│ - Automatic legacy data migration & status normalization                 │
+│ - Deterministic "Reset Demo" factory restore                             │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
----
-
-## 5. Technology Stack & Selection Rationale
-
-- **React 19 & Vite 8:** Blazing-fast development server, instantaneous HMR, modern ES module architecture, and optimal production bundling.
-- **Tailwind CSS v4:** Modern, utility-first CSS engine for clean, maintainable, and responsive layouts without bloated CSS files.
-- **React Router 7 (`react-router-dom`):** Declarative, client-side routing with clean URL synchronization for all dashboard routes.
-- **Recharts 3:** Composable SVG-based chart library providing high-performance, responsive financial charts.
-- **Lucide React:** Lightweight, accessible SVG icon set with consistent visual semantics.
-- **date-fns 4:** Pure, functional, tree-shakeable date manipulation without mutating state.
-- **Vitest & React Testing Library:** Fast, native Vite test runner with jsdom for unit and component interaction testing.
+### Component Hierarchy:
+- `AppLayout`: Persistent sidebar, mobile responsive navigation drawer, and global utility header (error simulation & demo reset controls).
+- `DataTable`: High-performance, accessible, generic table primitive featuring customizable columns, alignment, row click handlers, loading skeletons, and empty states.
+- `Features`:
+  - `overview/`: Metric cards, Recharts revenue trajectory, attention queue, activity timeline.
+  - `billing-cycles/`: Tabbed shell housing **Billing Cycles** (`CyclesPage`) and **Billing Preferences** (`BillingPreferencesPage`), plus the core workflow `CycleDetailPage`.
+  - `invoices/`: Tabular receivables list (`InvoicesPage`) and printable GST invoice document (`InvoiceDetailPage`).
+  - `customers/`: Account directory and drawer inspector.
 
 ---
 
-## 6. State Management & Mock Data Strategy
+## 4. Key Technical Decisions
 
-- **Separate Mock Service Layer (`mockApi.js`):** UI components never mutate mock data directly. All operations go through asynchronous methods (`getBillingCycles`, `closeBillingCycle`, `recordInvoicePayment`) simulating realistic network latency (150–350ms).
-- **LocalStorage Persistence (`storage.js`):** All actions (adding an adjustment, excluding a waybill, closing a cycle, generating an invoice, recording a payment) persist in the browser's `localStorage`. Page refreshes preserve state.
-- **Deterministic Factory Reset:** The top navigation bar includes a **"Reset Demo"** button that restores the mock state back to the original baseline at any time.
-- **Deterministic Error Simulation:** A **"Simulate Error"** toggle in the header forces the API layer to reject requests, allowing evaluators to verify retryable error states and fallback UI.
+| Technical Decision | Implementation | Rationale |
+| :--- | :--- | :--- |
+| **Aesthetic & Density** | Linear / Stripe inspired light theme, high-contrast text (`text-slate-900` / `text-slate-700`). | B2B finance specialists read complex numerical data for hours; low-contrast text and playful animations cause eye fatigue and slow down operations. |
+| **Reusable `DataTable` Component** | Generic primitive used in Cycles, Preferences, Invoices, and Customers. | Eliminates table boilerplate, ensures identical keyboard navigation, responsive overflow handling, and visual consistency across all views. |
+| **1-to-1 Billing Preference Constraint** | Enforced in `mockApi.createBillingPreference` and UI selection. | Prevents duplicate active billing preferences for the same company, eliminating ambiguous cycle boundaries and double-billing. |
+| **Canonical State Machine** | Strict 3-state cycle lifecycle: `OPEN` → `CLOSED` → `INVOICED`. | Replaced ambiguous intermediate sub-states (`IN_REVIEW`, `READY_FOR_REVIEW`) with clear, unmistakable statuses. |
+| **Single-Row Column Density** | Combined Customer Name with secondary codes (Cycle / Invoice #) using `whitespace-nowrap`. | Prevents awkward multi-line text wrapping on wide desktop monitors and keeps vertical table rhythm compact and scannable. |
+| **Currency & Number Uniformity** | `IndianRupee` (`₹`) everywhere via `formatINR`. | Replaced western `$` icon defaults with proper Indian Rupee (`₹`) typography, lakhs/crores formatting, and consistent currency icons across inputs and buttons. |
+| **Pure Functional Math Engines** | `taxCalculations.js` and `cycleCalculations.js` separated from React rendering. | Guarantees testability, determinism, and zero floating-point accumulation errors (`round2` decimal precision). |
 
 ---
 
-## 7. Setup & Testing Instructions
+## 5. Technology Stack & Rationale
+
+- **React 19 & Vite 8:** Ultra-fast hot module replacement (HMR), lightweight bundle size, and modern standard ES module architecture.
+- **Tailwind CSS v4:** Zero-runtime styling with fine-grained utility classes, enabling rapid design iteration and consistent design tokens.
+- **React Router 7 (`react-router-dom`):** Declarative client-side routing, deep linking (`/cycles/:cycleId`, `/invoices/:invoiceId`), and nested tab routing (`/cycles`, `/cycles/preferences`).
+- **Recharts 3:** Composable SVG charting optimized for responsive financial bar and trajectory comparisons.
+- **Lucide React:** Clean, consistent, tree-shakeable SVG icon system.
+- **date-fns 4:** Pure, functional, timezone-aware date operations without mutable global state.
+- **Vitest & React Testing Library:** Modern test runner with native Vite integration; executes the full test suite in under 3.5 seconds.
+
+---
+
+## 6. Assumptions & Tradeoffs
+
+1. **Frontend-Only Architecture (No Backend):**
+   - *Tradeoff:* No real database or remote server.
+   - *Design Choice:* Architected a dedicated asynchronous `MockApi` service layer with simulated network latency and `localStorage` persistence. The entire frontend interacts with Promises, making it a zero-refactor drop-in replacement for a real REST or GraphQL API.
+2. **Deterministic GST Tax Rules:**
+   - *Assumption:* Seller entity is based in Karnataka (`29AABCL9988K1Z5`). Buyers in Karnataka incur CGST + SGST (9% + 9%); buyers in other Indian states incur IGST (18%); international entities incur local standard tax (Singapore GST 9%).
+3. **Browser Print vs. Server PDF Generation:**
+   - *Tradeoff:* Used CSS `@media print` styling on `InvoiceDocument.jsx` rather than bundling heavy canvas/PDF libraries.
+   - *Benefit:* Instantaneous rendering, pixel-perfect native browser PDF export, and zero client bundle bloat.
+4. **Number Precision:**
+   - *Assumption:* Handled with standard two-decimal rounding utilities (`round2`). For high-frequency Wall Street fractional cent calculations, a library like `decimal.js` would be preferred.
+
+---
+
+## 7. Setup & Verification Instructions
 
 ### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm (v9 or higher)
+- **Node.js:** v18.0.0 or higher
+- **npm:** v9.0.0 or higher
 
-### Installation
+### Installation & Run
 ```bash
-# Clone or navigate into the workspace
+# 1. Navigate to the project directory
 cd cyclepay
 
-# Install dependencies (already completed)
+# 2. Install dependencies
 npm install
-```
 
-### Running Development Server
-```bash
+# 3. Start development server
 npm run dev
 ```
-Open your browser at `http://localhost:5173`.
+Open **`http://localhost:5173`** in your browser.
 
-### Running Tests
-Execute the comprehensive test suite (16 tests across 5 test suites):
+### Test Suite Execution
+Run the comprehensive Vitest suite (16 tests across 5 test suites covering tax math, cycle boundaries, status calculations, UI components, and end-to-end async workflows):
 ```bash
 npm test
 ```
 
-### Building for Production
+### Code Quality & Production Build
 ```bash
+# Run ESLint (0 errors, 0 warnings)
+npm run lint
+
+# Compile production bundle
 npm run build
 ```
 
-### Running Lint Checks
-```bash
-npm run lint
-```
+---
+
+## 8. Requirements Coverage Checklist
+
+| Requirement | Implementation in BillCycle |
+| :--- | :--- |
+| **1. Primary Dashboard** | [OverviewPage.jsx](file:///Users/nishantmainwal/Developer/sde-practice/cyclepay/src/features/overview/OverviewPage.jsx): Executive KPIs, Revenue vs Collections chart, Attention queue, and Activity feed. |
+| **2. Specialized Domain Data** | Freight transport orders, reefer/cold-chain shipments, ODC cargo, GSTINs, SAC 9965 classification, fuel surcharges, billing preferences. |
+| **3. Search & Exploration** | Multi-column text search, status filters, frequency filters, and tabbed grouping (`Billing Cycles` vs `Billing Preferences`). |
+| **4. Entity Detail View** | [CycleDetailPage.jsx](file:///Users/nishantmainwal/Developer/sde-practice/cyclepay/src/features/billing-cycles/CycleDetailPage.jsx) (line-item audit) and [InvoiceDetailPage.jsx](file:///Users/nishantmainwal/Developer/sde-practice/cyclepay/src/features/invoices/InvoiceDetailPage.jsx) (tax invoice document). |
+| **5. State-Changing Actions** | Item inclusion toggle, adding/deleting adjustments, closing billing cycles, issuing invoices, creating/editing billing preferences, recording payments. |
+| **6. Loading / Empty / Error States** | Shimmer Skeletons ([Skeleton.jsx](file:///Users/nishantmainwal/Developer/sde-practice/cyclepay/src/components/ui/Skeleton.jsx)), Empty states with reset triggers ([EmptyState.jsx](file:///Users/nishantmainwal/Developer/sde-practice/cyclepay/src/components/shared/EmptyState.jsx)), and retryable error banners ([ErrorState.jsx](file:///Users/nishantmainwal/Developer/sde-practice/cyclepay/src/components/shared/ErrorState.jsx)) with header simulation switch. |
+| **7. Responsive Behavior** | Adaptive layouts transitioning gracefully from full desktop data tables to card views on mobile/tablet viewports ([DataTable.jsx](file:///Users/nishantmainwal/Developer/sde-practice/cyclepay/src/components/ui/DataTable.jsx)). |
+| **8. Accessibility & Usability** | Semantic HTML5, ARIA labels, focus management in modals, WCAG AA contrast compliance (`text-slate-700`/`900`), and keyboard accessibility. |
 
 ---
 
-## 8. Definition of Done Verification
+## 9. What to Build or Improve Next with Additional Time
 
-| Done Criterion | BillCycle Implementation |
-|---|---|
-| 1. Open billing dashboard | Executive overview displays total revenue, unbilled amount, invoices generated, outstanding balance, and chart. |
-| 2. Browse billing cycles | Dedicated data table at `/cycles` listing all cycles with period, item count, amounts, and statuses. |
-| 3. Search and filter cycles | Instant text search, status dropdown (In Review, Closed, etc.), frequency filter (Weekly, Monthly, Quarterly), and sorting. |
-| 4. Open customer billing cycle | Deep-linked detail page at `/cycles/:cycleId` with customer metadata and cycle status. |
-| 5. Inspect billable shipments | Itemized waybill table showing vehicle type, route, delivery dates, base rate, and fuel surcharges. |
-| 6. Understand financial breakdown | Side-by-side summary detailing subtotal, adjustments, taxable value, CGST/SGST/IGST breakdown, and grand total. |
-| 7. Add or modify eligible adjustment | Interactive modal to add credit rebates or ancillary charges with reason documentation. |
-| 8. Close the billing cycle | Modal dialog with audit warning; locking the cycle from further shipment modification. |
-| 9. Generate an invoice | Available on closed cycles; generates unique sequential invoice number (e.g., `LF-INV-2026-0042`). |
-| 10. View the generated invoice | Direct navigation to `/invoices/:invoiceId` with print-ready tax invoice layout. |
-| 11. Record a partial payment | Remittance dialog allowing custom amount (up to remaining balance) and bank reference. |
-| 12. Updated outstanding balance | Dynamic calculation updating remaining balance and status (`ISSUED` → `PARTIALLY_PAID` → `PAID`). |
+1. **Automated PDF Generation:** Integrate `@react-pdf/renderer` or serverless Puppeteer to allow direct one-click PDF downloads and email dispatch to accounts payable contacts.
+2. **Batch Cycle Operations:** Multi-select checkboxes on `CyclesPage` enabling finance controllers to bulk-review and bulk-close 50+ weekly cycles in a single sign-off batch.
+3. **Multi-Currency Ledger:** Support for dynamic cross-currency settlements (USD, EUR, SGD, AED) with real-time exchange rate conversion and foreign exchange gain/loss tracking.
+4. **Optimistic UI Updates with Rollback:** Upgrade local mutation state to optimistic UI patterns with automatic rollback on network failure.
+5. **Role-Based Access Control (RBAC):** Distinct permission levels: Operations Auditor (can view and exclude shipments), Finance Manager (can approve adjustments and close cycles), and CFO (can issue write-offs).
 
 ---
 
-## 9. Architectural Tradeoffs & Future Enhancements
+## 10. Technical Interview Discussion Guide
 
-- **Frontend State vs. Real Backend:** Designed with a mock service layer and `localStorage` persistence as required by the assignment guidelines. In an enterprise production deployment, this service layer seamlessly swaps with real REST/GraphQL APIs and server-side JWT authentication.
-- **Client-Side Currency Handling:** Implemented with safe decimal rounding (`round2`) and `Intl.NumberFormat('en-IN')`. In enterprise multi-currency setups, libraries like `dinero.js` or `decimal.js` can be introduced for sub-cent currency exchange precision.
-- **Future Enhancements:**
-  - Automated PDF file download using `@react-pdf/renderer` in addition to browser print.
-  - Multi-currency billing cycle settlement (e.g. USD, SGD, INR dual-currency invoicing).
-  - Bulk cycle closing with batch approval workflows.
-  - Automated webhook notifications on invoice dispatch.
+When demonstrating this project in the technical interview:
+- **Architecture Tour:** Show how `mockApi.js` decouples storage and business validation from UI components, mimicking enterprise backend microservices.
+- **Pure Math Walkthrough:** Step into `src/utils/taxCalculations.js` to demonstrate deterministic GST splitting and safe decimal rounding.
+- **Workflow Demonstration:**
+  1. Go to **Overview** → Click on *Apex Pharmaceuticals* in **Attention Required**.
+  2. In **Cycle Detail**, toggle a shipment off and observe the immediate reactive recalculation of taxable base and taxes in the Financial Summary.
+  3. Add an operational adjustment (e.g. ₹5,000 demurrage charge).
+  4. Click **Close Billing Cycle** → Verify audit confirmation modal.
+  5. Click **Generate Tax Invoice** → Automatically routes to the print-ready invoice.
+  6. Click **₹ Record Payment** → Record a partial payment (e.g. ₹1,00,000 via RTGS) and watch status dynamically become `Partially Paid` with updated remaining balance.
