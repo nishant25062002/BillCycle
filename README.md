@@ -192,18 +192,3 @@ npm run build
 3. **Multi-Currency Ledger:** Support for dynamic cross-currency settlements (USD, EUR, SGD, AED) with real-time exchange rate conversion and foreign exchange gain/loss tracking.
 4. **Optimistic UI Updates with Rollback:** Upgrade local mutation state to optimistic UI patterns with automatic rollback on network failure.
 5. **Role-Based Access Control (RBAC):** Distinct permission levels: Operations Auditor (can view and exclude shipments), Finance Manager (can approve adjustments and close cycles), and CFO (can issue write-offs).
-
----
-
-## 10. Technical Interview Discussion Guide
-
-When demonstrating this project in the technical interview:
-- **Architecture Tour:** Show how `mockApi.js` decouples storage and business validation from UI components, mimicking enterprise backend microservices.
-- **Pure Math Walkthrough:** Step into `src/utils/taxCalculations.js` to demonstrate deterministic GST splitting and safe decimal rounding.
-- **Workflow Demonstration:**
-  1. Go to **Overview** → Click on *Apex Pharmaceuticals* in **Attention Required**.
-  2. In **Cycle Detail**, toggle a shipment off and observe the immediate reactive recalculation of taxable base and taxes in the Financial Summary.
-  3. Add an operational adjustment (e.g. ₹5,000 demurrage charge).
-  4. Click **Close Billing Cycle** → Verify audit confirmation modal.
-  5. Click **Generate Tax Invoice** → Automatically routes to the print-ready invoice.
-  6. Click **₹ Record Payment** → Record a partial payment (e.g. ₹1,00,000 via RTGS) and watch status dynamically become `Partially Paid` with updated remaining balance.
