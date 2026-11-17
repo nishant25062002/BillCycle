@@ -189,6 +189,6 @@ npm run build
 
 1. **Automated PDF Generation:** Integrate `@react-pdf/renderer` or serverless Puppeteer to allow direct one-click PDF downloads and email dispatch to accounts payable contacts.
 2. **Batch Cycle Operations:** Multi-select checkboxes on `CyclesPage` enabling finance controllers to bulk-review and bulk-close 50+ weekly cycles in a single sign-off batch.
-3. **Multi-Currency Ledger:** Support for dynamic cross-currency settlements (USD, EUR, SGD, AED) with real-time exchange rate conversion and foreign exchange gain/loss tracking.
+3. **Dynamic Company Country Configuration (Tax & Currency):** Currently, the system defaults to an India-based operating entity (INR ₹ and GST). With additional time, company country and legal registration details can be made dynamically configurable in company settings, automatically adapting currency formatting, applicable tax engines (e.g. European VAT, US Sales Tax, Singapore GST), and statutory compliance fields based on the selected country.
 4. **Optimistic UI Updates with Rollback:** Upgrade local mutation state to optimistic UI patterns with automatic rollback on network failure.
 5. **Role-Based Access Control (RBAC):** Distinct permission levels: Operations Auditor (can view and exclude shipments), Finance Manager (can approve adjustments and close cycles), and CFO (can issue write-offs).
